@@ -1,0 +1,41 @@
+on:
+  push
+
+name: Test Evidence for Control Automation
+
+env:
+  IS_REPORT_HTML: true
+  TEST_REPORT_HTML_PATH: target/site/serenity
+  TEST_REPORT_PDF_PATH: target/testresults.pdf
+
+jobs: 
+  generate-test-report:
+    name: Run Tests and Download test result artefact
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v2
+      
+      - name: Run Serenity Test
+        run: mvn test verify
+
+      - name: Upload Test Report
+        uses: actions/upload-artifact@v2
+        with:
+          name: test-report
+          path: ${{ github.workspace }}/${{ env.TEST_REPORT_HTML_PATH }}
+
+      - name: Convert to PDF
+        uses: fifsky/html-to-pdf-action@master
+        if: ${{ env.IS_REPORT_HTML }}
+        with:
+          htmlFile: ./${{ env.TEST_REPORT_HTML_PATH }}/index.html
+          outputFile: ./${{ env.TEST_REPORT_PDF_PATH }}
+          pdfOptions: '{"format": "A4", "margin": {"top": "10mm", "left": "10mm", "right": "10mm", "bottom": "10mm"}}'
+
+      - name: Upload Test PDF
+        uses: actions/upload-artifact@v2
+        if: ${{ env.IS_REPORT_HTML }}
+        with:
+          name: test-report-pdf
+          path: ${{ github.workspace }}/${{ env.TEST_REPORT_PDF_PATH }}
